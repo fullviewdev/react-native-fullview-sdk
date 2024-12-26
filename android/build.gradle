@@ -1,0 +1,132 @@
+buildscript {
+  ext {
+    buildToolsVersion = "35.0.0"
+    minSdkVersion = 28
+    compileSdkVersion = 35
+    targetSdkVersion = 34
+    ndkVersion = "26.1.10909125"
+    kotlinVersion = "1.9.24"
+    agp_version = '8.6.1'
+  }
+  // Buildscript is evaluated before everything else so we can't use getExtOrDefault
+  def kotlin_version = rootProject.ext.has("kotlinVersion") ? rootProject.ext.get("kotlinVersion") : project.properties["FullviewSdk_kotlinVersion"]
+
+  repositories {
+    mavenLocal()
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "com.android.tools.build:gradle:$agp_version"
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+  }
+}
+
+def reactNativeArchitectures() {
+  def value = rootProject.getProperties().get("reactNativeArchitectures")
+  return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+}
+
+def isNewArchitectureEnabled() {
+  return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+if (isNewArchitectureEnabled()) {
+  apply plugin: "com.facebook.react"
+}
+
+def getExtOrDefault(name) {
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["FullviewSdk_" + name]
+}
+
+def getExtOrIntegerDefault(name) {
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["FullviewSdk_" + name]).toInteger()
+}
+
+def supportsNamespace() {
+  def parsed = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')
+  def major = parsed[0].toInteger()
+  def minor = parsed[1].toInteger()
+
+  // Namespace support was added in 7.3.0
+  return (major == 7 && minor >= 3) || major >= 8
+}
+
+android {
+  if (supportsNamespace()) {
+    namespace "com.fullviewsdk"
+
+    sourceSets {
+      main {
+        manifest.srcFile "src/main/AndroidManifestNew.xml"
+      }
+    }
+  }
+
+  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion getExtOrIntegerDefault("minSdkVersion")
+    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+    multiDexEnabled true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+
+  lintOptions {
+    disable "GradleCompatible"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_21
+  }
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  google()
+}
+allprojects {
+  repositories {
+    google()
+    mavenCentral()
+    mavenLocal()
+  }
+}
+
+
+def kotlin_version = getExtOrDefault("kotlinVersion")
+
+dependencies {
+  // For < 0.71, this will be from the local maven repo
+  // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
+  //noinspection GradleDynamicVersion
+  implementation "com.facebook.react:react-android:0.71.+"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  implementation "com.android.support.constraint:constraint-layout:1.1.3"
+  implementation "com.google.android.material:material:1.12.0"
+  implementation "io.insert-koin:koin-core:3.2.0"
+  implementation "io.insert-koin:koin-android:3.2.0"
+  implementation "com.squareup.retrofit2:converter-gson:2.9.0"
+  implementation "com.jakewharton.timber:timber:5.0.1"
+  implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6"
+  implementation "androidx.fragment:fragment-ktx:1.8.3"
+  implementation "com.squareup.okhttp3:logging-interceptor:4.11.0"
+  implementation "co.daily:client:0.24.0"
+  implementation "com.microsoft.signalr:signalr:8.0.8"
+  implementation "com.microsoft.signalr.messagepack:signalr-messagepack:5.0.0"
+  //implementation files('/Users/feyviken/.m2/repository/io/fullview/fullview-sdk/0.9.2/fullview-sdk-0.9.2.aar') // Remove when 0.9.2 is deployed
+  implementation "io.fullview:fullview-sdk:0.9.2" 
+}
+
