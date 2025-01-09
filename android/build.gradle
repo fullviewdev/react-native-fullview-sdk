@@ -126,7 +126,6 @@ dependencies {
   implementation "co.daily:client:0.24.0"
   implementation "com.microsoft.signalr:signalr:8.0.8"
   implementation "com.microsoft.signalr.messagepack:signalr-messagepack:5.0.0"
-  //implementation files('/Users/feyviken/.m2/repository/io/fullview/fullview-sdk/0.9.2/fullview-sdk-0.9.2.aar') // Remove when 0.9.2 is deployed
   implementation "io.fullview:fullview-sdk:0.9.2" 
 }
 

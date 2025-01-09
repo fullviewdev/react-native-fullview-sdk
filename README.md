@@ -8,13 +8,24 @@ Fullview React Native SDK supports following platforms:
   - Android
   - iOS
 
+Other platforms supported:
+
+  - Android
+  - iOS
+  - Flutter
+
+Soon-supported platforms:
+
+  - Ionic
+  - Cordova
+
 ## Installation
 
 ### NPM
 
 
 ```sh
-npm install react-native-fullview-sdk
+npm install @fullview/react-native-fullview-sdk
 ```
 
 
@@ -29,12 +40,12 @@ npm install react-native-fullview-sdk
 
 ## Usage
 
-Add `import FullviewSDK from 'react-native-fullview-sdk';` and then use the different functions in ** FullviewSDK** to configure and start the SDK.
+Add `import FullviewSDK from '@fullview/react-native-fullview-sdk';` and then use the different functions in ** FullviewSDK** to configure and start the SDK.
 
 A minimal implementation looks like the following:
 
 ```js
-import { FullviewSDK } from 'react-native-fullview-sdk';
+import { FullviewSDK } from '@fullview/react-native-fullview-sdk';
 
 // ...
 
