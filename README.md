@@ -73,7 +73,7 @@ Add `import FullviewSDK from '@fullview/react-native-fullview-sdk';` and then us
 A minimal implementation looks like the following:
 
 ```js
-import { FullviewSDK } from '@fullview/react-native-fullview-sdk';
+import FullviewSDK from '@fullview/react-native-fullview-sdk';
 
 // ...
 
