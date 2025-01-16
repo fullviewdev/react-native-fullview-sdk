@@ -10,6 +10,8 @@ Wrap the view you want to hide within the `DataRedaction` container. Any view wi
 #### Example
 
 ```react
+import { DataRedaction } from '@fullview/react-native-fullview-sdk';
+
 <DataRedaction>
   <Text>Text that can NOT be seen by the agent</Text>
 </DataRedaction>

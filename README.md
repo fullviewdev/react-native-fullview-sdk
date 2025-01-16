@@ -1,6 +1,6 @@
 # React Native Developer Documentation
 
-**Current version:** 0.9.7
+**Current version:** 0.9.8
 
 Fullview React Native SDK supports following platforms:
 
@@ -21,6 +21,14 @@ Soon-supported platforms:
 
 ## Installation
 
+### Expo
+
+```sh
+npm expo install @fullview/react-native-fullview-sdk
+```
+
+
+
 ### NPM
 
 
@@ -32,6 +40,26 @@ npm install @fullview/react-native-fullview-sdk
 ## Configuration
 
 ### iOS Requirements
+
+#### Expo
+- In your `app.json` add the following value if you don't already have them:
+
+```json
+{
+  "expo": {
+    "ios": {
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app uses the microphone for customer support interactions",
+        "NSCameraUsageDescription": "This app uses the camera for customer support interactions.",
+        "UIBackgroundModes": ["voip"]
+      }
+    }
+  }
+}
+
+```
+
+#### React Native
 - Add the following permissions in your *app's xcodeproject Info.plist*, if you don't already have them:
 	- **NSMicrophoneUsageDescription**
 	- **NSCameraUsageDescription**
@@ -52,11 +80,11 @@ import { FullviewSDK } from '@fullview/react-native-fullview-sdk';
 FullviewSDK.attach() // Ideally this should be run as soon as the app starts.
 
 FullviewSDK.register(
-    '<organisation_id>', 
-    '<user_id>', 
-    '<device_id>', 
-    '<name>', 
-    '<email>'
+    '<string>', 
+    '<string>', 
+    '<string>', 
+    '<string>', 
+    '<string>'
 )
 .then(() => {
     console.log('SDK Registered');

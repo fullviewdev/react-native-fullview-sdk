@@ -1,5 +1,5 @@
 import { NativeModules, Platform } from 'react-native';
-import { FullviewState } from 'react-native-fullview-sdk';
+import FullviewState from './fullview-sdk-state';
 
 const LINKING_ERROR =
   `The package 'react-native-fullview-sdk' doesn't seem to be linked. Make sure: \n\n` +
