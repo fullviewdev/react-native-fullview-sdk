@@ -2,7 +2,8 @@
 
 @interface RCT_EXTERN_MODULE(FullviewSdk, NSObject)
 
-RCT_EXTERN_METHOD(register:(NSString)organisationId
+RCT_EXTERN_METHOD(register:(NSString)region
+                 withOrganisationId:(NSString)organisationId
                  withUserId:(NSString)userId
                  withDeviceId:(NSString)deviceId
                  withName:(NSString)name

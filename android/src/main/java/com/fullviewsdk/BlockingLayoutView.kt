@@ -1,7 +1,20 @@
 package com.fullviewsdk
 
 import android.content.Context
-import io.fullview.fullview_sdk.helpers.DataRedactionView
+import android.widget.FrameLayout
 
+class BlockingLayoutView(context: Context) : FrameLayout(context) {
+  private val measureAndLayout = Runnable {
+    measure(
+      MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+      MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+    )
+    layout(left, top, right, bottom)
+  }
 
-class BlockingLayoutView(context: Context) : DataRedactionView(context, null)
+  override fun requestLayout() {
+    super.requestLayout()
+    post(measureAndLayout)
+  }
+
+}

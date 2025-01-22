@@ -1,8 +1,9 @@
 import { NativeModules, Platform } from 'react-native';
 import FullviewState from './fullview-sdk-state';
+import FullviewRegion from './fullview-sdk-region';
 
 const LINKING_ERROR =
-  `The package 'react-native-fullview-sdk' doesn't seem to be linked. Make sure: \n\n` +
+  `The package '@fullview/react-native-fullview-sdk' doesn't seem to be linked. Make sure: \n\n` +
   Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n';
@@ -21,6 +22,7 @@ const FullviewSdk = NativeModules.FullviewSdk
 type FullviewSdkType = {
   attach(): Promise<void>;
   register(
+    region: FullviewRegion,
     organisationId: string,
     userId: string,
     deviceId: string,
@@ -41,8 +43,8 @@ const FullviewSdkModule: FullviewSdkType = {
     }
     return Promise.resolve();
   },
-  register: (organisationId, userId, deviceId, name, email) =>
-    FullviewSdk.register(organisationId, userId, deviceId, name, email),
+  register: (region, organisationId, userId, deviceId, name, email) =>
+    FullviewSdk.register(region, organisationId, userId, deviceId, name, email),
   logout: () => FullviewSdk.logout(),
   requestCoBrowse: () => FullviewSdk.requestCoBrowse(),
   cancelCoBrowseRequest: () => FullviewSdk.cancelCoBrowseRequest(),

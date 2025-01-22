@@ -1,3 +1,3 @@
 import { requireNativeComponent } from 'react-native';
 
-export default requireNativeComponent('DataRedactionView');;
+export default requireNativeComponent('DataRedactionView');

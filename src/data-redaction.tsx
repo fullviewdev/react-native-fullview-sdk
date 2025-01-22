@@ -1,8 +1,8 @@
 import React, { type PropsWithChildren } from 'react';
 import { Platform } from 'react-native';
+import DataRedactionView from './data-redaction-view';
 import BlockingLayout from './blocking-layout';
 import BlockingView from './blocking-view';
-import DataRedactionView from './data-redaction-view';
 
 const DataRedaction: React.FC<PropsWithChildren> = ({
   children
@@ -15,7 +15,7 @@ const DataRedaction: React.FC<PropsWithChildren> = ({
     :
     (<BlockingLayout>
         <BlockingView></BlockingView>
-        {children}
+          {children}
       </BlockingLayout>)
   );
 };

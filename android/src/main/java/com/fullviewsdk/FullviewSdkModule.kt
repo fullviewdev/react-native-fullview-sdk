@@ -5,6 +5,8 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import io.fullview.fullview_sdk.Fullview
+import io.fullview.fullview_sdk.Region
+import io.fullview.fullview_sdk.HostType
 
 class FullviewSdkModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
@@ -28,7 +30,7 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) :
       currentActivity?.apply {
         sdk = Fullview()
         runOnUiThread {
-          sdk.attach(this)
+          sdk.attach(this, HostType.REACT_NATIVE)
           isAttached = true
           promise.resolve(null)
         }
@@ -38,6 +40,7 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) :
 
   @ReactMethod
   fun register(
+    region: String,
     organisationId: String,
     userId: String,
     deviceId: String,
@@ -45,7 +48,7 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) :
     email: String,
     promise: Promise
   ) {
-    sdk.register(organisationId, userId, deviceId, name, email)
+    sdk.register(organisationId, userId, deviceId, name, email, Region.valueOf(region.toUpperCase()))
     promise.resolve(null)
   }
 

@@ -1,6 +1,6 @@
 # React Native Developer Documentation
 
-**Current version:** 0.9.8
+**Current version:** 0.10.0
 
 Fullview React Native SDK supports following platforms:
 
@@ -27,10 +27,7 @@ Soon-supported platforms:
 npm expo install @fullview/react-native-fullview-sdk
 ```
 
-
-
-### NPM
-
+### npm
 
 ```sh
 npm install @fullview/react-native-fullview-sdk
@@ -39,10 +36,14 @@ npm install @fullview/react-native-fullview-sdk
 
 ## Configuration
 
+### Expo specific requirements
+
+`react-native-fullview-sdk` implements native code and libraries so you will need to use an `Expo Development Build`, `Expo Go` applications are not supported.
+
 ### iOS Requirements
 
-#### Expo
-- In your `app.json` add the following value if you don't already have them:
+#### Expo 
+- If you are using *Expo SDK 42* or above, in your `app.json` add the following values if you don't already have them:
 
 ```json
 {
@@ -68,18 +69,20 @@ npm install @fullview/react-native-fullview-sdk
 
 ## Usage
 
-Add `import FullviewSDK from '@fullview/react-native-fullview-sdk';` and then use the different functions in ** FullviewSDK** to configure and start the SDK.
+Add `import FullviewSDK from '@fullview/react-native-fullview-sdk';` and then use the different functions in **FullviewSDK** to configure and start the SDK.
 
 A minimal implementation looks like the following:
 
 ```js
 import FullviewSDK from '@fullview/react-native-fullview-sdk';
+import { FullviewRegion } from '@fullview/react-native-fullview-sdk';
 
 // ...
 
 FullviewSDK.attach() // Ideally this should be run as soon as the app starts.
 
 FullviewSDK.register(
+	 <FullviewRegion>
     '<string>', 
     '<string>', 
     '<string>', 
@@ -109,6 +112,7 @@ And use `FullviewSDK.logout()` to disconnect and disable the SDK.
    Attaches fullview SDK to the host app. Should be called as soon as the app starts.
 
 - `function register(
+    region: FullviewRegion,
     organisationId: string,
     userId: string,
     deviceId: string,

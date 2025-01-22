@@ -6,8 +6,9 @@ class FullviewSdk: NSObject {
 
   private var fullview: FullviewCore?
   
-  @objc(register:withUserId:withDeviceId:withName:withEmail:withResolver:withRejecter:)
+  @objc(register:withOrganisationId:withUserId:withDeviceId:withName:withEmail:withResolver:withRejecter:)
   func register(
+    region: String,
     organisationId: String,
     userId: String,
     deviceId: String,
@@ -20,7 +21,9 @@ class FullviewSdk: NSObject {
       return
     }
     do {
+      let selectedRegion = FullviewRegion(rawValue: region) ?? .EU1 
       let config = try FullviewConfig(
+          region: selectedRegion,
           organisationId: organisationId,
           userId: userId,
           deviceId: deviceId, // must be a uuid string
