@@ -1,6 +1,6 @@
 {
   "name": "@fullview/react-native-fullview-sdk",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "With Fullview SDK, you can effortlessly integrate screen-sharing, real-time assistance, and advanced data redaction for sensitive information, enhancing user support while prioritising security and privacy.",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",

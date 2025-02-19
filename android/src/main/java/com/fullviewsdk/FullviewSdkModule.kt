@@ -7,6 +7,8 @@ import com.facebook.react.bridge.ReactMethod
 import io.fullview.fullview_sdk.Fullview
 import io.fullview.fullview_sdk.Region
 import io.fullview.fullview_sdk.HostType
+import io.fullview.fullview_sdk.HubLayout
+
 
 class FullviewSdkModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
@@ -48,7 +50,7 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) :
     email: String,
     promise: Promise
   ) {
-    sdk.register(organisationId, userId, deviceId, name, email, Region.valueOf(region.toUpperCase()))
+    sdk.register(organisationId, userId, deviceId, name, email, Region.valueOf(region.toUpperCase()), HubLayout.DEFAULT)
     promise.resolve(null)
   }
 
