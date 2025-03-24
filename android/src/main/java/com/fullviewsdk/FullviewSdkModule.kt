@@ -50,7 +50,15 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) :
     email: String,
     promise: Promise
   ) {
-    sdk.register(organisationId, userId, deviceId, name, email, Region.valueOf(region.toUpperCase()), HubLayout.DEFAULT)
+    sdk.register(
+      organisationId = organisationId,
+      userId = userId,
+      deviceId = deviceId,
+      name = name,
+      email = email,
+      region = Region.valueOf(region.uppercase()),
+      additionalConfig = emptyMap()
+    )
     promise.resolve(null)
   }
 

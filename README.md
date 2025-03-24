@@ -1,6 +1,6 @@
 # React Native Developer Documentation
 
-**Current version:** 0.11.0
+**Current version:** 0.12.0
 
 Fullview React Native SDK supports following platforms:
 
