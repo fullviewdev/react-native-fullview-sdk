@@ -1,25 +1,27 @@
-import { NativeModules, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import NativeFullviewSdk, { type Spec } from './NativeFullviewSdk';
 import FullviewState from './fullview-sdk-state';
-import FullviewRegion from './fullview-sdk-region';
+import type FullviewRegion from './fullview-sdk-region';
 
 const LINKING_ERROR =
   `The package '@fullview/react-native-fullview-sdk' doesn't seem to be linked. Make sure: \n\n` +
   Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
   '- You rebuilt the app after installing the package\n' +
+  '- The New Architecture is enabled (React Native 0.82+ only ships it)\n' +
   '- You are not using Expo Go\n';
 
-const FullviewSdk = NativeModules.FullviewSdk
-  ? NativeModules.FullviewSdk
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      }
-    );
+const native: Spec =
+  NativeFullviewSdk ??
+  (new Proxy(
+    {},
+    {
+      get() {
+        throw new Error(LINKING_ERROR);
+      },
+    }
+  ) as Spec);
 
-type FullviewSdkType = {
+export type FullviewSdkType = {
   attach(): Promise<void>;
   register(
     region: FullviewRegion,
@@ -36,38 +38,29 @@ type FullviewSdkType = {
   getState(): Promise<FullviewState>;
 };
 
+/** Maps the native state string (shared by iOS and Android) to the public enum. */
+export function toFullviewState(nativeState: string): FullviewState {
+  switch (nativeState) {
+    case 'CO_BROWSE_ACTIVE':
+      return FullviewState.Active;
+    case 'CO_BROWSE_INVITATION':
+      return FullviewState.Invitation;
+    case 'CO_BROWSE_REQUESTED':
+      return FullviewState.CoBrowseRequested;
+    default:
+      return FullviewState.Idle;
+  }
+}
+
 const FullviewSdkModule: FullviewSdkType = {
-  attach: () => {
-    if (Platform.OS === 'android') {
-      return FullviewSdk.attach();
-    }
-    return Promise.resolve();
-  },
+  attach: () => native.attach(),
   register: (region, organisationId, userId, deviceId, name, email) =>
-    FullviewSdk.register(region, organisationId, userId, deviceId, name, email),
-  logout: () => FullviewSdk.logout(),
-  requestCoBrowse: () => FullviewSdk.requestCoBrowse(),
-  cancelCoBrowseRequest: () => FullviewSdk.cancelCoBrowseRequest(),
-  getPositionInCoBrowseQueue: () => FullviewSdk.getPositionInCoBrowseQueue(),
-  getState: function (): Promise<FullviewState> {
-    return FullviewSdk.getState().then((className: String) => {
-      let state: FullviewState;
-
-      if (className == "CO_BROWSE_ACTIVE") {
-        state = FullviewState.Active;
-      } else if (className == "CO_BROWSE_INVITATION") {
-        state = FullviewState.Invitation;
-      } else if (className == "CO_BROWSE_REQUESTED") {
-        state = FullviewState.CoBrowseRequested;
-      } else {
-        state = FullviewState.Idle;
-      }
-
-      return new Promise((resolve) => {
-        resolve(state);
-      });
-    });
-  },
+    native.register(region, organisationId, userId, deviceId, name, email),
+  logout: () => native.logout(),
+  requestCoBrowse: () => native.requestCoBrowse(),
+  cancelCoBrowseRequest: () => native.cancelCoBrowseRequest(),
+  getPositionInCoBrowseQueue: () => native.getPositionInCoBrowseQueue(),
+  getState: () => native.getState().then(toFullviewState),
 };
 
-export default FullviewSdkModule; 
+export default FullviewSdkModule;

@@ -1,22 +1,22 @@
 import React, { type PropsWithChildren } from 'react';
 import { Platform } from 'react-native';
-import DataRedactionView from './data-redaction-view';
-import BlockingLayout from './blocking-layout';
-import BlockingView from './blocking-view';
+import DataRedactionView from './DataRedactionViewNativeComponent';
+import BlockingLayoutView from './BlockingLayoutViewNativeComponent';
+import BlockingView from './BlockingViewNativeComponent';
 
-const DataRedaction: React.FC<PropsWithChildren> = ({
-  children
-}) => {
+/**
+ * Wrap anything that must never reach a support agent. The wrapped content is
+ * masked in every screenshot the SDK captures.
+ */
+const DataRedaction: React.FC<PropsWithChildren> = ({ children }) => {
+  if (Platform.OS === 'ios') {
+    return <DataRedactionView>{children}</DataRedactionView>;
+  }
   return (
-    (Platform.OS === 'ios') ?
-    (<DataRedactionView>
+    <BlockingLayoutView>
+      <BlockingView />
       {children}
-    </DataRedactionView>)
-    :
-    (<BlockingLayout>
-        <BlockingView></BlockingView>
-          {children}
-      </BlockingLayout>)
+    </BlockingLayoutView>
   );
 };
 

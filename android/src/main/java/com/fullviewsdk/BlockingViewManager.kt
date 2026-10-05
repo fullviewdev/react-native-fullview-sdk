@@ -1,19 +1,22 @@
 package com.fullviewsdk
 
-import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
-import com.facebook.react.uimanager.ViewGroupManager
+import com.facebook.react.uimanager.ViewManagerDelegate
+import com.facebook.react.viewmanagers.BlockingViewManagerDelegate
+import com.facebook.react.viewmanagers.BlockingViewManagerInterface
 
-class BlockingViewManager(
-  private val callerContext: ReactApplicationContext
-) : SimpleViewManager<BlockingView>() {
+@ReactModule(name = BlockingViewManager.NAME)
+class BlockingViewManager : SimpleViewManager<BlockingView>(), BlockingViewManagerInterface<BlockingView> {
 
-  override fun getName() = REACT_CLASS
-  override fun createViewInstance(context: ThemedReactContext) =
-    BlockingView(context)
+  private val delegate = BlockingViewManagerDelegate(this)
+
+  override fun getDelegate(): ViewManagerDelegate<BlockingView> = delegate
+  override fun getName() = NAME
+  override fun createViewInstance(context: ThemedReactContext) = BlockingView(context)
 
   companion object {
-    const val REACT_CLASS = "BlockingView"
+    const val NAME = "BlockingView"
   }
 }

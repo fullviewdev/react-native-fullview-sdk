@@ -1,3 +1,6 @@
+# releases
+fullview-react-native-fullview-sdk-*.tgz
+
 # Xcode
 !**/*.xcodeproj
 !**/*.pbxproj
@@ -172,3 +175,12 @@ vendor/
 
 # Jest Integration
 /packages/react-native-fantom/build/
+
+# Native binaries copied in by scripts/bundle-natives.sh (shipped in the npm package, not in git)
+ios/Frameworks/
+android/libs/
+plugin/build/
+
+# The example must build with the New Architecture flag in CI, and the debug keystore is the RN template default.
+!example/android/gradle.properties
+!example/android/app/debug.keystore

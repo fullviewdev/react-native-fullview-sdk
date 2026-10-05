@@ -1,143 +1,126 @@
 # React Native Developer Documentation
 
-**Current version:** 0.12.0
+**Current version:** 0.13.0-rc.1
 
-Fullview React Native SDK supports following platforms:
+The Fullview React Native SDK brings live support meetings (screen sharing, camera, agent cursor and highlights) and data redaction to React Native apps on iOS and Android. The native iOS and Android libraries ship inside this package, so there is nothing to add to your Podfile or Gradle files beyond installing the package.
 
-- React Native
-  - Android
-  - iOS
+## Requirements
 
-Other platforms supported:
+- React Native **0.82 or newer** with the New Architecture (the only architecture those versions ship). Tested on 0.87.
+- iOS **15.1+**, Swift projects (the default for React Native).
+- Android **minSdk 27**, **compileSdk 36 or newer**, Kotlin 2.x.
+- Expo: a **development build** (Expo Go is not supported because the package contains native code). SDK 57 or newer.
 
-  - Android
-  - iOS
-  - Flutter
-
-Soon-supported platforms:
-
-  - Ionic
-  - Cordova
+If your app already embeds the Daily WebRTC client (`co.daily:client` or the `Daily` pod), it must be on the same major version as this package (0.40.x).
 
 ## Installation
+
+```sh
+npm install @fullview/react-native-fullview-sdk
+cd ios && pod install
+```
 
 ### Expo
 
 ```sh
-npm expo install @fullview/react-native-fullview-sdk
+npx expo install @fullview/react-native-fullview-sdk
 ```
 
-### npm
-
-```sh
-npm install @fullview/react-native-fullview-sdk
-```
-
-
-## Configuration
-
-### Expo specific requirements
-
-`react-native-fullview-sdk` implements native code and libraries so you will need to use an `Expo Development Build`, `Expo Go` applications are not supported.
-
-### iOS Requirements
-
-#### Expo 
-- If you are using *Expo SDK 42* or above, in your `app.json` add the following values if you don't already have them:
+Add the config plugin to `app.json` and rebuild the development client. The plugin writes the camera and microphone usage descriptions and the `voip` background mode into `Info.plist`; Android needs nothing.
 
 ```json
 {
   "expo": {
-    "ios": {
-      "infoPlist": {
-        "NSMicrophoneUsageDescription": "This app uses the microphone for customer support interactions",
-        "NSCameraUsageDescription": "This app uses the camera for customer support interactions.",
-        "UIBackgroundModes": ["voip"]
-      }
-    }
+    "plugins": [
+      [
+        "@fullview/react-native-fullview-sdk",
+        {
+          "cameraPermission": "This app uses the camera during live support sessions.",
+          "microphonePermission": "This app uses the microphone during live support sessions."
+        }
+      ]
+    ]
   }
 }
-
 ```
 
-#### React Native
-- Add the following permissions in your *app's xcodeproject Info.plist*, if you don't already have them:
-	- **NSMicrophoneUsageDescription**
-	- **NSCameraUsageDescription**
-	- **UIBackgroundModes** **voip**
+### Bare React Native, iOS
 
+Add to your app's `Info.plist` if not already present:
+
+- `NSMicrophoneUsageDescription`
+- `NSCameraUsageDescription`
+- `UIBackgroundModes` containing `voip`
 
 ## Usage
 
-Add `import FullviewSDK from '@fullview/react-native-fullview-sdk';` and then use the different functions in **FullviewSDK** to configure and start the SDK.
+```ts
+import FullviewSDK, { FullviewRegion } from '@fullview/react-native-fullview-sdk';
 
-A minimal implementation looks like the following:
+// As early as possible after the app mounts (required on Android, no-op on iOS).
+await FullviewSDK.attach();
 
-```js
-import FullviewSDK from '@fullview/react-native-fullview-sdk';
-import { FullviewRegion } from '@fullview/react-native-fullview-sdk';
-
-// ...
-
-FullviewSDK.attach() // Ideally this should be run as soon as the app starts.
-
-FullviewSDK.register(
-	 <FullviewRegion>
-    '<string>', 
-    '<string>', 
-    '<string>', 
-    '<string>', 
-    '<string>'
-)
-.then(() => {
-    console.log('SDK Registered');
-})
-.catch((error) => {
-    console.error('SDK Register Error:', error);
-});
+await FullviewSDK.register(
+  FullviewRegion.EU1,   // or EU2 / US1, matching your Fullview workspace
+  '<organisationId>',
+  '<userId>',
+  '<deviceId>',         // a stable UUID for this install
+  '<name>',
+  '<email>'
+);
 ```
 
-*Note*: `device_id` must be a correct unique UUID. 
+Call `FullviewSDK.logout()` to disconnect and disable the SDK.
 
-And use `FullviewSDK.logout()` to disconnect and disable the SDK.
- 
-## Additional features usage
-- [Data Redaction](data_redaction.md)
-- [Screen Sharing](screen_share.md) (additional configuration required for iOS)
+## API
 
+| Method | Description |
+|---|---|
+| `attach(): Promise<void>` | Attaches the SDK to the host activity. Call once on start. |
+| `register(region, organisationId, userId, deviceId, name, email): Promise<void>` | Identifies the user with Fullview. |
+| `logout(): Promise<void>` | Logs the user out. |
+| `requestCoBrowse(): Promise<void>` | Puts the user in the support queue. |
+| `cancelCoBrowseRequest(): Promise<void>` | Removes the user from the queue. |
+| `getPositionInCoBrowseQueue(): Promise<number>` | Queue position, 0 when not queued. |
+| `getState(): Promise<FullviewState>` | `Idle`, `Invitation`, `Active` or `CoBrowseRequested`. |
 
-## Fullview SDK API
+## Data redaction
 
-- `function attach(): Promise<void>`
-   Attaches fullview SDK to the host app. Should be called as soon as the app starts.
+Wrap anything that must never reach a support agent. The wrapped content is masked in every frame the SDK captures.
 
-- `function register(
-    region: FullviewRegion,
-    organisationId: string,
-    userId: string,
-    deviceId: string,
-    name: string,
-    email: string
-  ): Promise<void>`
+```tsx
+import { DataRedaction } from '@fullview/react-native-fullview-sdk';
 
-	Registers user to be available in Fullview.
+<DataRedaction>
+  <Text>Card number</Text>
+</DataRedaction>
+```
 
-- `function logout(): Promise<void>`
+## Screen sharing outside the app (iOS)
 
-	Logs out the current user from Fullview.
+Sharing the whole device screen, including other apps, needs a Broadcast Upload Extension in your app. See [screen_share.md](screen_share.md).
 
-- `function requestCoBrowse(): Promise<void>`
+## Testing with Jest
 
-	Puts the user into a waiting queue requesting help from agents.
+The native module is resolved at import time. Mock it in your test setup:
 
-- `function cancelCoBrowseRequest(): Promise<void>`
+```js
+jest.mock('@fullview/react-native-fullview-sdk/src/NativeFullviewSdk', () => ({
+  __esModule: true,
+  default: {
+    attach: jest.fn(() => Promise.resolve()),
+    register: jest.fn(() => Promise.resolve()),
+    logout: jest.fn(() => Promise.resolve()),
+    requestCoBrowse: jest.fn(() => Promise.resolve()),
+    cancelCoBrowseRequest: jest.fn(() => Promise.resolve()),
+    getPositionInCoBrowseQueue: jest.fn(() => Promise.resolve(0)),
+    getState: jest.fn(() => Promise.resolve('IDLE')),
+  },
+}));
+```
 
-	Remove the user from the waiting queue.
+## Upgrading from 0.12
 
-- `function getPositionInCoBrowseQueue(): Promise<number>`
-
-	Position in the request cobrowse queue. 0 if there's no request/queue.
-
-- `function getState(): Promise<FullviewState>`
-
-	Current state of the SDK. Used to update the UI if necessary.
+- The package is New Architecture only. Legacy-architecture apps must stay on 0.12.
+- `FullviewSDK` and `DataRedaction` keep the same API. Do not import `NativeModules.FullviewSdk` or `requireNativeComponent('DataRedactionView')` directly.
+- The `Daily` and `DailySystemBroadcast` pods are pulled in by this package; remove any explicit pins from your Podfile.
