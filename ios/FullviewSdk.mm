@@ -27,16 +27,18 @@
 }
 
 - (void)attach:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
-  // Nothing to attach on iOS: FullviewCore installs its overlay on register().
+  // Nothing to attach on iOS: FullviewCore installs its overlay on registerCustomer().
   resolve(nil);
 }
 
-- (void)register:(NSString *)region
+- (void)registerCustomer:(NSString *)region
   organisationId:(NSString *)organisationId
           userId:(NSString *)userId
-        deviceId:(NSString *)deviceId
+        deviceId:(NSString * _Nullable)deviceId
             name:(NSString *)name
            email:(NSString *)email
+  recordWifiOnly:(BOOL)recordWifiOnly
+disableReplaysForUser:(BOOL)disableReplaysForUser
          resolve:(RCTPromiseResolveBlock)resolve
           reject:(RCTPromiseRejectBlock)reject {
   [_impl registerWithRegion:region
@@ -45,6 +47,8 @@
                    deviceId:deviceId
                        name:name
                       email:email
+             recordWifiOnly:recordWifiOnly
+      disableReplaysForUser:disableReplaysForUser
                     resolve:^(id _Nullable value) { resolve(value); }
                      reject:^(NSString *code, NSString *message) { reject(code, message, nil); }];
 }
@@ -57,6 +61,22 @@
 - (void)requestCoBrowse:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
   [_impl requestCoBrowseWithResolve:^(id _Nullable value) { resolve(value); }
                              reject:^(NSString *code, NSString *message) { reject(code, message, nil); }];
+}
+
+- (void)recordNetworkRequest:(NSString *)payload
+                     resolve:(RCTPromiseResolveBlock)resolve
+                      reject:(RCTPromiseRejectBlock)reject {
+  [_impl recordNetworkRequest:payload
+                      resolve:^(id _Nullable value) { resolve(value); }
+                       reject:^(NSString *code, NSString *message) { reject(code, message, nil); }];
+}
+
+- (void)setScreen:(NSString *)name
+          resolve:(RCTPromiseResolveBlock)resolve
+           reject:(RCTPromiseRejectBlock)reject {
+  [_impl setScreen:name
+           resolve:^(id _Nullable value) { resolve(value); }
+            reject:^(NSString *code, NSString *message) { reject(code, message, nil); }];
 }
 
 - (void)cancelCoBrowseRequest:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {

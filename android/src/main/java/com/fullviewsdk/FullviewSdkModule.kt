@@ -1,5 +1,6 @@
 package com.fullviewsdk
 
+import androidx.fragment.app.FragmentActivity
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import io.fullview.fullview_sdk.Fullview
@@ -27,7 +28,11 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) : NativeFullviewS
     }
     activity.runOnUiThread {
       try {
-        sdk = Fullview().also { it.attach(activity, HostType.REACT_NATIVE) }
+        val instance = Fullview().also { it.attach(activity, HostType.REACT_NATIVE) }
+        // attach() commits the SDK fragment asynchronously; flush it so the fragment
+        // has an activity by the time registerCustomer() runs.
+        (activity as? FragmentActivity)?.supportFragmentManager?.executePendingTransactions()
+        sdk = instance
         promise.resolve(null)
       } catch (t: Throwable) {
         promise.reject("ATTACH_ERROR", t)
@@ -35,29 +40,41 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) : NativeFullviewS
     }
   }
 
-  override fun register(
+  override fun registerCustomer(
     region: String,
     organisationId: String,
     userId: String,
-    deviceId: String,
+    deviceId: String?,
     name: String,
     email: String,
+    recordWifiOnly: Boolean,
+    disableReplaysForUser: Boolean,
     promise: Promise
   ) {
-    val s = sdk ?: return promise.reject("REGISTER_ERROR", "attach() must be called before register().")
-    try {
-      s.register(
-        organisationId = organisationId,
-        userId = userId,
-        deviceId = deviceId,
-        name = name,
-        email = email,
-        region = Region.valueOf(region.uppercase()),
-        additionalConfig = emptyMap()
-      )
-      promise.resolve(null)
-    } catch (t: Throwable) {
-      promise.reject("REGISTER_ERROR", t)
+    val s = sdk ?: return promise.reject("REGISTER_ERROR", "attach() must be called before registerCustomer().")
+    val activity = reactApplicationContext.currentActivity
+      ?: return promise.reject("REGISTER_ERROR", "No current activity.")
+    activity.runOnUiThread {
+      try {
+        s.register(
+          organisationId = organisationId,
+          userId = userId,
+          deviceId = deviceId,
+          name = name,
+          email = email,
+          region = Region.valueOf(region.uppercase()),
+          // Spelled out rather than taken from FullviewInterface's companion: the SDK ships here as
+          // a minified AAR, whose companion object R8 has renamed, so those constants do not resolve
+          // from Kotlin. FullviewConfigKeysTest in the SDK pins the spellings.
+          additionalConfig = mapOf(
+            "fullview-record-wifi-only" to recordWifiOnly.toString(),
+            "fullview-disable-replays-for-user" to disableReplaysForUser.toString()
+          )
+        )
+        promise.resolve(null)
+      } catch (t: Throwable) {
+        promise.reject("REGISTER_ERROR", t)
+      }
     }
   }
 
@@ -70,6 +87,23 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) : NativeFullviewS
   override fun requestCoBrowse(promise: Promise) {
     val s = sdk ?: return promise.reject("REQUEST_COBROWSE_ERROR", "attach() not called.")
     s.requestCoBrowse()
+    promise.resolve(null)
+  }
+
+  /**
+   * Resolved rather than rejected before attach: the observer is patched into the app's networking
+   * for the whole process, so requests happen before attach and after logout, and a rejection
+   * there would surface as a warning on every one of them.
+   */
+  override fun recordNetworkRequest(payload: String, promise: Promise) {
+    sdk?.recordNetworkRequest(payload)
+    promise.resolve(null)
+  }
+
+  // Like recordNetworkRequest, this is dropped rather than rejected when attach() has not run:
+  // an app reporting its screens should not have to care whether recording happens to be on.
+  override fun setScreen(name: String, promise: Promise) {
+    sdk?.recordScreen(name)
     promise.resolve(null)
   }
 

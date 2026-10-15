@@ -7,19 +7,23 @@ import { TurboModuleRegistry, type TurboModule } from 'react-native';
  */
 export interface Spec extends TurboModule {
   attach(): Promise<void>;
-  register(
+  registerCustomer(
     region: string,
     organisationId: string,
     userId: string,
-    deviceId: string,
+    deviceId: string | null,
     name: string,
-    email: string
+    email: string,
+    recordWifiOnly: boolean,
+    disableReplaysForUser: boolean
   ): Promise<void>;
   logout(): Promise<void>;
   requestCoBrowse(): Promise<void>;
   cancelCoBrowseRequest(): Promise<void>;
   getPositionInCoBrowseQueue(): Promise<number>;
   getState(): Promise<string>;
+  recordNetworkRequest(payload: string): Promise<void>;
+  setScreen(name: string): Promise<void>;
 }
 
 // `get`, not `getEnforcing`: a missing native module surfaces as a clear

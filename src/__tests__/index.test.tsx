@@ -6,12 +6,13 @@ jest.mock('../NativeFullviewSdk', () => ({
   __esModule: true,
   default: {
     attach: jest.fn(() => Promise.resolve()),
-    register: jest.fn(() => Promise.resolve()),
+    registerCustomer: jest.fn(() => Promise.resolve()),
     logout: jest.fn(() => Promise.resolve()),
     requestCoBrowse: jest.fn(() => Promise.resolve()),
     cancelCoBrowseRequest: jest.fn(() => Promise.resolve()),
     getPositionInCoBrowseQueue: jest.fn(() => Promise.resolve(3)),
     getState: jest.fn(() => Promise.resolve('CO_BROWSE_REQUESTED')),
+    setScreen: jest.fn(() => Promise.resolve()),
   },
 }));
 
@@ -30,8 +31,17 @@ describe('FullviewSDK', () => {
     expect(toFullviewState('')).toBe(FullviewState.Idle);
   });
 
-  it('forwards register arguments to the native module unchanged', async () => {
-    await FullviewSDK.register(
+  it('forwards the screen name to the native module unchanged', async () => {
+    await FullviewSDK.setScreen('Invoice #1042');
+
+    // Passed through as written: the app decides what an agent should read, and anything the
+    // bridge did to it here - trimming, lower-casing, a route-shaped guess - would be the SDK
+    // overruling that.
+    expect(mockNative.setScreen).toHaveBeenCalledWith('Invoice #1042');
+  });
+
+  it('forwards registerCustomer arguments to the native module unchanged', async () => {
+    await FullviewSDK.registerCustomer(
       FullviewRegion.EU1,
       'org',
       'user',
@@ -39,13 +49,38 @@ describe('FullviewSDK', () => {
       'Name',
       'e@x.io'
     );
-    expect(mockNative.register).toHaveBeenCalledWith(
+    // Recording on any network unless the host asks otherwise.
+    expect(mockNative.registerCustomer).toHaveBeenCalledWith(
       'eu1',
       'org',
       'user',
       'device',
       'Name',
-      'e@x.io'
+      'e@x.io',
+      false,
+      false
+    );
+  });
+
+  it('passes the recording options through', async () => {
+    await FullviewSDK.registerCustomer(
+      FullviewRegion.EU1,
+      'org',
+      'user',
+      undefined,
+      'Name',
+      'e@x.io',
+      { recordWifiOnly: true, disableReplaysForUser: true }
+    );
+    expect(mockNative.registerCustomer).toHaveBeenCalledWith(
+      'eu1',
+      'org',
+      'user',
+      null,
+      'Name',
+      'e@x.io',
+      true,
+      true
     );
   });
 

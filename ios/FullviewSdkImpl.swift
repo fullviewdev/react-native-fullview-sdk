@@ -15,9 +15,11 @@ public final class FullviewSdkImpl: NSObject {
     region: String,
     organisationId: String,
     userId: String,
-    deviceId: String,
+    deviceId: String?,
     name: String,
     email: String,
+    recordWifiOnly: Bool,
+    disableReplaysForUser: Bool,
     resolve: @escaping Resolve,
     reject: @escaping Reject
   ) {
@@ -31,9 +33,13 @@ public final class FullviewSdkImpl: NSObject {
         region: selectedRegion,
         organisationId: organisationId,
         userId: userId,
-        deviceId: deviceId, // must be a UUID string
+        deviceId: deviceId, // optional; must be a UUID string when given
         name: name,
-        email: email
+        email: email,
+        additionalConfig: [
+          "recordWifiOnly": recordWifiOnly,
+          "disableReplaysForUser": disableReplaysForUser,
+        ]
       )
       let core = FullviewCore()
       core.onError = { error in
@@ -70,6 +76,23 @@ public final class FullviewSdkImpl: NSObject {
         resolve(nil)
       }
     }
+  }
+
+  @objc public func recordNetworkRequest(_ payload: String, resolve: @escaping Resolve, reject: @escaping Reject) {
+    // Resolved rather than rejected when nobody is registered: the observer is patched into the
+    // app's networking for the whole process, so requests happen before register and after logout,
+    // and a rejection there would surface as an unhandled promise on every one of them.
+    fullview?.recordNetworkRequest(payload)
+    resolve(nil)
+  }
+
+  @objc public func setScreen(_ name: String, resolve: @escaping Resolve, reject: @escaping Reject) {
+    // Resolved rather than rejected when nobody is registered, for the same reason as
+    // recordNetworkRequest: an app reports its screens from its navigation listener, which runs
+    // before register and after logout, and rejecting there would surface as an unhandled
+    // promise on every screen change.
+    fullview?.recordScreen(name)
+    resolve(nil)
   }
 
   @objc public func cancelCoBrowseRequest(resolve: @escaping Resolve, reject: @escaping Reject) {
