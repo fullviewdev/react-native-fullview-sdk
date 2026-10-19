@@ -6,14 +6,20 @@ import { TurboModuleRegistry, type TurboModule } from 'react-native';
  * React Native generates the native interfaces from this file.
  */
 export interface Spec extends TurboModule {
-  attach(): Promise<void>;
+  // `configure`, not `init`: codegen turns this name into an Objective-C selector, and a
+  // void-returning method in the `init` family is a compile error under ARC. The public API calls
+  // it `init` - see sdk-module.tsx - the same way registerCustomer renames the native `register`.
+  configure(region: string, organisationId: string): Promise<void>;
+  // Flat arguments rather than the object the public API takes, because codegen generates a C++
+  // interface from this file and an object there costs a struct on both platforms for nothing.
+  // `roles` is always an array; empty means none.
   registerCustomer(
-    region: string,
-    organisationId: string,
     userId: string,
-    deviceId: string | null,
     name: string,
     email: string,
+    isAnonymous: boolean,
+    env: string | null,
+    roles: ReadonlyArray<string>,
     recordWifiOnly: boolean,
     disableReplaysForUser: boolean
   ): Promise<void>;

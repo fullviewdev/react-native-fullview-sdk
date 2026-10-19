@@ -26,27 +26,34 @@
   return self;
 }
 
-- (void)attach:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject {
-  // Nothing to attach on iOS: FullviewCore installs its overlay on registerCustomer().
-  resolve(nil);
+// Nothing is installed here on iOS - FullviewCore puts its overlay up on registerCustomer() -
+// so this only remembers which workspace this app belongs to.
+- (void)configure:(NSString *)region
+   organisationId:(NSString *)organisationId
+          resolve:(RCTPromiseResolveBlock)resolve
+           reject:(RCTPromiseRejectBlock)reject {
+  [_impl configureWithRegion:region
+              organisationId:organisationId
+                     resolve:^(id _Nullable value) { resolve(value); }
+                      reject:^(NSString *code, NSString *message) { reject(code, message, nil); }];
 }
 
-- (void)registerCustomer:(NSString *)region
-  organisationId:(NSString *)organisationId
-          userId:(NSString *)userId
-        deviceId:(NSString * _Nullable)deviceId
+- (void)registerCustomer:(NSString *)userId
             name:(NSString *)name
            email:(NSString *)email
+     isAnonymous:(BOOL)isAnonymous
+             env:(NSString * _Nullable)env
+           roles:(NSArray *)roles
   recordWifiOnly:(BOOL)recordWifiOnly
 disableReplaysForUser:(BOOL)disableReplaysForUser
          resolve:(RCTPromiseResolveBlock)resolve
           reject:(RCTPromiseRejectBlock)reject {
-  [_impl registerWithRegion:region
-             organisationId:organisationId
-                     userId:userId
-                   deviceId:deviceId
+  [_impl registerWithUserId:userId
                        name:name
                       email:email
+                isAnonymous:isAnonymous
+                        env:env
+                      roles:roles
              recordWifiOnly:recordWifiOnly
       disableReplaysForUser:disableReplaysForUser
                     resolve:^(id _Nullable value) { resolve(value); }

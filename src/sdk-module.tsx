@@ -69,47 +69,55 @@ const native: Spec =
     }
   ) as Spec);
 
-export type FullviewSdkType = {
-  attach(): Promise<void>;
-  registerCustomer(
-    region: FullviewRegion,
-    organisationId: string,
-    userId: string,
-    /**
-     * Optional. The backend owns the device id: it resolves it as its own cookie, then this
-     * value, then a freshly minted id, and the native SDKs keep the cookie across launches. Pass
-     * one only to carry over an id the app already persists; on iOS it has to be a UUID string.
-     */
-    deviceId: string | null | undefined,
-    name: string,
-    email: string,
-    /**
-     * Options.
-     *
-     * `recordWifiOnly` records sessions only while the device is on wifi; it is off by default,
-     * because a frame is ~10 KB and a static screen sends nothing, so an hour of normal use costs
-     * ~36 MB at most.
-     *
-     * `disableReplaysForUser` opts this user out of session replay entirely, the same flag the web
-     * SDK passes in its identity. Neither affects a live session with an agent.
-     */
-    options?: { recordWifiOnly?: boolean; disableReplaysForUser?: boolean }
-  ): Promise<void>;
+/**
+ * Who the customer is, shaped like the web SDK's `$fvIdentity` so an app that uses both does not
+ * have to learn two vocabularies.
+ *
+ * There is deliberately no device id. The backend owns it - it resolves its own cookie first and
+ * mints one otherwise, and the native SDKs keep that across launches - so an app passing one could
+ * only ever disagree with the system of record.
+ */
+/** Which workspace this app belongs to, and where it lives. */
+export type FullviewInit = {
+  /** The region your Fullview workspace is in. */
+  region: FullviewRegion;
+  organisationId: string;
+};
+
+export type FullviewIdentity = {
+  /** Your own id for this customer. The web SDK calls this `id`. */
+  id: string;
+  name?: string;
+  email?: string;
+  /** Whether you could not name this customer. */
+  isAnonymous?: boolean;
+  /** Which deployment they are in - "production", "staging". Used to decide who is recorded. */
+  env?: string;
+  /** Their roles, used the same way. */
+  roles?: string[];
   /**
-   * Records that the app has moved to another screen, so the session timeline reads like a web
-   * one: "Visited Checkout" beside the taps that got there.
-   *
-   * It has to be called, because nothing native can see it. A React Native app draws every
-   * screen inside one activity and one view controller, so navigating from Dashboard to Invoices
-   * changes nothing the SDK could observe. Wire it to your navigator once - with React
-   * Navigation that is `onStateChange` - and every screen is reported from then on.
-   *
-   * The name is whatever an agent should read, not a route path or a component name: "Checkout",
-   * not "CheckoutScreen" or "/checkout/:id".
-   *
-   * Safe to call at any time. Before `registerCustomer`, after `logout`, or while nothing is
-   * being recorded, it does nothing rather than failing.
+   * Opts this customer out of session replay entirely, the same flag the web SDK's identity
+   * carries. Does not affect a live session with an agent.
    */
+  disableReplaysForUser?: boolean;
+  /**
+   * Records only while the device is on wifi. Mobile-only, and off by default: a frame is ~10 KB
+   * and a static screen sends nothing, so an hour of normal use costs ~36 MB at most. A live
+   * session with an agent is never subject to it.
+   */
+  recordWifiOnly?: boolean;
+};
+
+export type FullviewSdkType = {
+  /**
+   * Starts the SDK and names the workspace it belongs to. Call it once, as early as possible
+   * after the app mounts, before anything else here.
+   *
+   * The web SDK carries this on its script tag; a phone has no script tag, so it is said here.
+   */
+  init(config: FullviewInit): Promise<void>;
+  /** Identifies the customer. Call `init()` first. */
+  registerCustomer(identity: FullviewIdentity): Promise<void>;
   setScreen(name: string): Promise<void>;
   logout(): Promise<void>;
   requestCoBrowse(): Promise<void>;
@@ -133,35 +141,27 @@ export function toFullviewState(nativeState: string): FullviewState {
 }
 
 const FullviewSdkModule: FullviewSdkType = {
-  attach: async () => {
+  init: async ({ region, organisationId }) => {
     // Patched here rather than at registerCustomer: a request the app makes before anyone signs in
     // belongs in the recording that follows, and `observeNetwork` only reports while something is
-    // being recorded anyway. Calling attach twice does not stack two patches.
+    // being recorded anyway. Calling init twice does not stack two patches.
     observeNetwork((payload) => {
       native.recordNetworkRequest(payload).catch((error: unknown) => {
         reportNetworkBridgeFailure(error);
       });
     });
-    await native.attach();
+    await native.configure(region, organisationId);
   },
-  registerCustomer: (
-    region,
-    organisationId,
-    userId,
-    deviceId,
-    name,
-    email,
-    options
-  ) =>
+  registerCustomer: (identity) =>
     native.registerCustomer(
-      region,
-      organisationId,
-      userId,
-      deviceId ?? null,
-      name,
-      email,
-      options?.recordWifiOnly ?? false,
-      options?.disableReplaysForUser ?? false
+      identity.id,
+      identity.name ?? '',
+      identity.email ?? '',
+      identity.isAnonymous ?? false,
+      identity.env ?? null,
+      identity.roles ?? [],
+      identity.recordWifiOnly ?? false,
+      identity.disableReplaysForUser ?? false
     ),
   setScreen: (name) => native.setScreen(name),
   logout: () => native.logout(),

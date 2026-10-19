@@ -2,6 +2,7 @@ package com.fullviewsdk
 
 import androidx.fragment.app.FragmentActivity
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReactApplicationContext
 import io.fullview.fullview_sdk.Fullview
 import io.fullview.fullview_sdk.FullviewSessionState
@@ -16,14 +17,20 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) : NativeFullviewS
 
   private var sdk: Fullview? = null
 
-  override fun attach(promise: Promise) {
+  // The workspace, remembered here the way the web SDK's script tag carries it, rather than
+  // repeated with every customer.
+  private var workspace: Pair<Region, String>? = null
+
+  override fun configure(region: String, organisationId: String, promise: Promise) {
+    workspace = Region.valueOf(region.uppercase()) to organisationId
+
     if (sdk != null) {
       promise.resolve(null)
       return
     }
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
-      promise.reject("ATTACH_ERROR", "No current activity; call attach() once the app is mounted.")
+      promise.reject("INIT_ERROR", "No current activity; call init() once the app is mounted.")
       return
     }
     activity.runOnUiThread {
@@ -35,23 +42,25 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) : NativeFullviewS
         sdk = instance
         promise.resolve(null)
       } catch (t: Throwable) {
-        promise.reject("ATTACH_ERROR", t)
+        promise.reject("INIT_ERROR", t)
       }
     }
   }
 
   override fun registerCustomer(
-    region: String,
-    organisationId: String,
     userId: String,
-    deviceId: String?,
     name: String,
     email: String,
+    isAnonymous: Boolean,
+    env: String?,
+    roles: ReadableArray,
     recordWifiOnly: Boolean,
     disableReplaysForUser: Boolean,
     promise: Promise
   ) {
-    val s = sdk ?: return promise.reject("REGISTER_ERROR", "attach() must be called before registerCustomer().")
+    val s = sdk ?: return promise.reject("REGISTER_ERROR", "init() must be called before registerCustomer().")
+    val (region, organisationId) = workspace
+      ?: return promise.reject("REGISTER_ERROR", "init() must be called before registerCustomer().")
     val activity = reactApplicationContext.currentActivity
       ?: return promise.reject("REGISTER_ERROR", "No current activity.")
     activity.runOnUiThread {
@@ -59,17 +68,21 @@ class FullviewSdkModule(reactContext: ReactApplicationContext) : NativeFullviewS
         s.register(
           organisationId = organisationId,
           userId = userId,
-          deviceId = deviceId,
+          // No device id: the backend owns it, so there is nothing for an app to pass.
+          deviceId = null,
           name = name,
           email = email,
-          region = Region.valueOf(region.uppercase()),
+          region = region,
           // Spelled out rather than taken from FullviewInterface's companion: the SDK ships here as
           // a minified AAR, whose companion object R8 has renamed, so those constants do not resolve
           // from Kotlin. FullviewConfigKeysTest in the SDK pins the spellings.
           additionalConfig = mapOf(
             "fullview-record-wifi-only" to recordWifiOnly.toString(),
             "fullview-disable-replays-for-user" to disableReplaysForUser.toString()
-          )
+          ),
+          env = env,
+          roles = roles.toArrayList().filterIsInstance<String>().ifEmpty { null },
+          isAnonymous = isAnonymous,
         )
         promise.resolve(null)
       } catch (t: Throwable) {

@@ -5,7 +5,7 @@ import { toFullviewState } from '../sdk-module';
 jest.mock('../NativeFullviewSdk', () => ({
   __esModule: true,
   default: {
-    attach: jest.fn(() => Promise.resolve()),
+    configure: jest.fn(() => Promise.resolve()),
     registerCustomer: jest.fn(() => Promise.resolve()),
     logout: jest.fn(() => Promise.resolve()),
     requestCoBrowse: jest.fn(() => Promise.resolve()),
@@ -40,45 +40,75 @@ describe('FullviewSDK', () => {
     expect(mockNative.setScreen).toHaveBeenCalledWith('Invoice #1042');
   });
 
-  it('forwards registerCustomer arguments to the native module unchanged', async () => {
-    await FullviewSDK.registerCustomer(
-      FullviewRegion.EU1,
-      'org',
-      'user',
-      'device',
-      'Name',
-      'e@x.io'
-    );
-    // Recording on any network unless the host asks otherwise.
+  it('names the workspace once, on init, not with every customer', async () => {
+    // init() also patches XMLHttpRequest to watch the app's requests, and this environment has
+    // none; the patch is covered by network-observer.test.ts.
+    global.XMLHttpRequest = class {
+      open() {}
+      send() {}
+      setRequestHeader() {}
+      addEventListener() {}
+      getAllResponseHeaders() {
+        return '';
+      }
+    } as unknown as typeof XMLHttpRequest;
+
+    await FullviewSDK.init({
+      region: FullviewRegion.EU1,
+      organisationId: 'org',
+    });
+
+    // `configure` on the bridge, `init` in public: a void method whose selector begins with
+    // "init" is a compile error in Objective-C under ARC.
+    expect(mockNative.configure).toHaveBeenCalledWith('eu1', 'org');
+  });
+
+  it('forwards the identity to the native module, filling the absent fields', async () => {
+    await FullviewSDK.registerCustomer({
+      id: 'user',
+      name: 'Name',
+      email: 'e@x.io',
+    });
+    // Everything the identity left out arrives as the native side's "not set": empty strings,
+    // null for the optional env, an empty roles array, and recording on any network.
     expect(mockNative.registerCustomer).toHaveBeenCalledWith(
-      'eu1',
-      'org',
       'user',
-      'device',
       'Name',
       'e@x.io',
+      false,
+      null,
+      [],
       false,
       false
     );
   });
 
-  it('passes the recording options through', async () => {
-    await FullviewSDK.registerCustomer(
-      FullviewRegion.EU1,
-      'org',
-      'user',
-      undefined,
-      'Name',
-      'e@x.io',
-      { recordWifiOnly: true, disableReplaysForUser: true }
-    );
+  /** There is no device id to pass any more - the backend owns it. */
+  it('has no device id in its surface at all', () => {
+    expect(
+      JSON.stringify(mockNative.registerCustomer.mock.calls)
+    ).not.toContain('device');
+  });
+
+  it("passes the identity's own fields through, including the web-shaped ones", async () => {
+    await FullviewSDK.registerCustomer({
+      id: 'user',
+      name: 'Name',
+      email: 'e@x.io',
+      isAnonymous: true,
+      env: 'staging',
+      roles: ['admin', 'beta'],
+      recordWifiOnly: true,
+      disableReplaysForUser: true,
+    });
+
     expect(mockNative.registerCustomer).toHaveBeenCalledWith(
-      'eu1',
-      'org',
       'user',
-      null,
       'Name',
       'e@x.io',
+      true,
+      'staging',
+      ['admin', 'beta'],
       true,
       true
     );

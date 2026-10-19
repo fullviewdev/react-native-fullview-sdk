@@ -10,14 +10,27 @@ public final class FullviewSdkImpl: NSObject {
   public typealias Reject = (String, String) -> Void
 
   private var fullview: FullviewCore?
+  /// Set by configure(), which is what init() calls: the workspace is named once - as the web SDK's script tag
+  /// names it - rather than repeated with every customer.
+  private var workspace: (region: FullviewRegion, organisationId: String)?
 
-  @objc public func register(
+  @objc public func configure(
     region: String,
     organisationId: String,
+    resolve: @escaping Resolve,
+    reject: @escaping Reject
+  ) {
+    workspace = (FullviewRegion(rawValue: region) ?? .EU1, organisationId)
+    resolve(nil)
+  }
+
+  @objc public func register(
     userId: String,
-    deviceId: String?,
     name: String,
     email: String,
+    isAnonymous: Bool,
+    env: String?,
+    roles: [String],
     recordWifiOnly: Bool,
     disableReplaysForUser: Bool,
     resolve: @escaping Resolve,
@@ -27,15 +40,21 @@ public final class FullviewSdkImpl: NSObject {
       reject("REGISTER_ERROR", "Register already called.")
       return
     }
+    guard let workspace else {
+      reject("REGISTER_ERROR", "init() must be called before registerCustomer().")
+      return
+    }
     do {
-      let selectedRegion = FullviewRegion(rawValue: region) ?? .EU1
       let config = try FullviewConfig(
-        region: selectedRegion,
-        organisationId: organisationId,
+        region: workspace.region,
+        organisationId: workspace.organisationId,
         userId: userId,
-        deviceId: deviceId, // optional; must be a UUID string when given
+        // No device id: the backend owns it, so there is nothing for an app to pass.
         name: name,
         email: email,
+        env: env,
+        roles: roles.isEmpty ? nil : roles,
+        isAnonymous: isAnonymous,
         additionalConfig: [
           "recordWifiOnly": recordWifiOnly,
           "disableReplaysForUser": disableReplaysForUser,

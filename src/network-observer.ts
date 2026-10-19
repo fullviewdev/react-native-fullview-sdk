@@ -71,7 +71,7 @@ const bodySize = (body: unknown): number => {
 
 /**
  * Starts recording. Returns a function that puts the original `XMLHttpRequest` back; calling
- * `observeNetwork` twice without it is a no-op, so a double `attach` cannot stack two patches.
+ * `observeNetwork` twice without it is a no-op, so a double `init` cannot stack two patches.
  */
 export function observeNetwork(send: Send): () => void {
   if (restore) return restore;

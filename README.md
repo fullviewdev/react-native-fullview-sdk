@@ -112,27 +112,30 @@ Add to your app's `Info.plist` if they are not already there:
 ```ts
 import FullviewSDK, { FullviewRegion } from '@fullview/react-native-fullview-sdk';
 
-// As early as possible after the app mounts. Required on Android, a no-op on iOS.
-await FullviewSDK.attach();
+// Start the SDK and name your workspace. As early as possible after the app mounts.
+await FullviewSDK.init({
+  region: FullviewRegion.EU1,   // or EU2 / US1, matching your Fullview workspace
+  organisationId: '<organisationId>',
+});
 
-await FullviewSDK.registerCustomer(
-  FullviewRegion.EU1,   // or EU2 / US1, matching your Fullview workspace
-  '<organisationId>',
-  '<userId>',
-  null,                 // deviceId: optional, see below
-  '<name>',
-  '<email>'
-);
+// Who the customer is.
+await FullviewSDK.registerCustomer({
+  id: '<your id for this customer>',
+  name: 'Ada Lovelace',
+  email: 'ada@example.com',
+});
 ```
 
-`attach()` before `registerCustomer()`: attaching starts watching the app's HTTP requests, and a request
-made before anybody signs in still belongs in the recording that follows.
+This mirrors the web SDK: `init()` carries what the script tag carries, and the identity object is
+shaped like `$fvIdentity`, so an app using both does not have to learn two vocabularies.
+
+`init()` must come first. It also starts watching the app's HTTP requests, and a request made
+before anybody signs in still belongs in the recording that follows.
 
 Call `FullviewSDK.logout()` to disconnect and disable the SDK.
 
-**The device id is optional.** Fullview assigns one on the first registration and the SDK keeps it
-across launches, so pass `null` unless your app already persists a stable UUID per install that you
-want Fullview to use. On iOS a provided value must be a UUID string.
+**There is no device id to pass.** Fullview assigns one and the SDK keeps it across launches, so
+an app has nothing to supply and nothing to keep in step.
 
 ### Reporting screens
 
@@ -177,25 +180,34 @@ const state = await FullviewSDK.getState();       // FullviewState
 
 `FullviewState` is `Idle`, `CoBrowseRequested`, `Invitation` or `Active`.
 
-### Options
+### The rest of the identity
 
 ```ts
-await FullviewSDK.registerCustomer(region, orgId, userId, null, name, email, {
-  recordWifiOnly: true,       // default false
-  disableReplaysForUser: true // default false
+await FullviewSDK.registerCustomer({
+  id: '<your id for this customer>',
+  name: 'Ada Lovelace',
+  email: 'ada@example.com',
+  isAnonymous: false,          // you could not name this customer
+  env: 'production',           // which deployment they are in
+  roles: ['admin'],            // their roles
+  disableReplaysForUser: true, // opt this customer out of replay entirely
+  recordWifiOnly: true,        // record only on wifi
 });
 ```
 
-`recordWifiOnly` records only while the device is on wifi. `disableReplaysForUser` opts this user
-out of session replay entirely — the same flag the web SDK sends in its identity. **Neither affects
-a live support session with an agent.**
+Every field but `id` is optional. `env` and `roles` are the same fields the web SDK's identity
+carries, and the dashboard uses them to decide which customers are recorded.
+
+`recordWifiOnly` is mobile-only and off by default: a frame is ~10 KB and a static screen sends
+nothing, so an hour of normal use costs ~36 MB at most. **Neither it nor `disableReplaysForUser`
+affects a live support session with an agent.**
 
 ## API
 
 | Method | Description |
 |---|---|
-| `attach(): Promise<void>` | Attaches the SDK to the host activity. Call once on start. |
-| `registerCustomer(region, organisationId, userId, deviceId, name, email, options?): Promise<void>` | Identifies the user with Fullview. `deviceId` may be `null`; `options.recordWifiOnly` records only on wifi, `options.disableReplaysForUser` opts the user out of replay. |
+| `init({ region, organisationId }): Promise<void>` | Starts the SDK and names the workspace. Call once on start, before anything else. |
+| `registerCustomer(identity): Promise<void>` | Identifies the customer. `identity.id` is required; `name`, `email`, `isAnonymous`, `env`, `roles`, `disableReplaysForUser` and `recordWifiOnly` are optional. |
 | `setScreen(name): Promise<void>` | Records that the app moved to another screen. Call it from your navigator; see [Reporting screens](#reporting-screens). |
 | `logout(): Promise<void>` | Logs the user out. |
 | `requestCoBrowse(): Promise<void>` | Puts the user in the support queue. |
@@ -259,8 +271,12 @@ The native module is resolved at import time. Mock it in your test setup:
 jest.mock('@fullview/react-native-fullview-sdk/src/NativeFullviewSdk', () => ({
   __esModule: true,
   default: {
-    attach: jest.fn(() => Promise.resolve()),
+    // The native module's own names, which are not always the public ones: `init()` calls
+    // `configure`, because Objective-C reserves `init`.
+    configure: jest.fn(() => Promise.resolve()),
     registerCustomer: jest.fn(() => Promise.resolve()),
+    setScreen: jest.fn(() => Promise.resolve()),
+    recordNetworkRequest: jest.fn(() => Promise.resolve()),
     logout: jest.fn(() => Promise.resolve()),
     requestCoBrowse: jest.fn(() => Promise.resolve()),
     cancelCoBrowseRequest: jest.fn(() => Promise.resolve()),
