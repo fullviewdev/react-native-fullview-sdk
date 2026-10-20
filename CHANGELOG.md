@@ -3,6 +3,17 @@
 Written for the people installing this package. One section per released version; the release
 workflow reads the section matching the version being published and will not publish without it.
 
+## 1.1.0
+
+### Added
+
+- **Chat works during a support call.** When an agent types in a meeting, the message now reaches
+  the phone — as a banner over your app, and in a chat panel the customer opens from the call
+  controls — and the customer can reply. Until now the agent's messages went nowhere and the
+  customer had no way to answer, on either platform. Nothing to call: it follows the chat setting
+  already on your Fullview workspace, and if that is off the button never appears. Text only for
+  now; a message carrying only a file shows as an attachment rather than an empty bubble.
+
 ## 1.0.0
 
 ### Breaking
