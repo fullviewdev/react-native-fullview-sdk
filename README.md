@@ -257,6 +257,46 @@ Your Fullview workspace decides whether sessions are kept at all, and the SDK ho
 as soon as it connects. **A live support session is never affected by any of this:** while an agent
 is watching, the screen is sent whatever the recording settings say.
 
+### Video, maps and camera previews
+
+**On Android, playing video does not reach the agent unless you ask for it.** Nor does a map, nor a
+camera preview. The area arrives as a hatched rectangle captioned `not captured`, both in a replay
+and in a live session, and everything around it is captured normally.
+
+This is not a bug the SDK can fix, so it is worth a paragraph on why. Android gives a view two ways
+to put pixels on the screen. Almost everything draws into the window, which is what the SDK
+captures: it asks the view tree to draw itself into a bitmap. A `SurfaceView` does not — it owns a
+separate layer that only the system compositor ever composites, and all it contributes to the
+window is a transparent hole for that layer to show through. Video players, maps and camera
+previews use one, because it is the cheaper and better way to show a stream of frames: hardware
+decoding, accurate frame timing, HDR, and, on a DRM surface, a guarantee that nothing can screenshot
+it. The SDK captures the window, so where the surface is, it has nothing at all, and the caption is
+there to say so rather than hand an agent a plausible black rectangle.
+
+**The fix is a prop, in your app.** A `TextureView` renders the same stream into the view tree
+instead, where the capture can see it:
+
+| Library | Set | |
+|---|---|---|
+| `react-native-video` | `viewType={ViewType.TEXTURE}` | Not available with DRM: `drm` forces a `SurfaceView`, and `ViewType.SURFACE_SECURE` blocks capture deliberately. |
+| `react-native-vision-camera` | `androidPreviewViewType="texture-view"` | CameraX's `COMPATIBLE` mode. |
+| Any CameraX `PreviewView` | `implementationMode = COMPATIBLE` | |
+| ExoPlayer / `PlayerView` | `app:surface_type="texture_view"` | |
+| `react-native-maps` | No `TextureView` option exists. | `liteMode` draws a static map into an ordinary view, which is captured; a live map is not. |
+
+**It costs something, which is why it is not the default.** Google measures `TextureView` as
+increasing total power draw during video playback by as much as 30% on some devices, and it gives
+up accurate frame timing, HDR output and DRM. If the video is incidental to what your support
+agents need to see, leaving it as a `SurfaceView` and accepting the marked gap is a reasonable
+answer — the caption means nobody is misled either way.
+
+**On iOS the SDK captures with `drawHierarchy`, which Apple documents as capturing regardless of
+how a view draws** — UIKit, Core Graphics, Metal, SpriteKit — so a Metal or Skia canvas is
+recorded. Hardware video is less certain: there are credible reports that `AVPlayerLayer` and
+camera preview come out blank on a physical device while appearing on the simulator, and
+DRM-protected playback is blanked by design. We have not measured this on a device. If video in
+your iOS app matters to your support flow, tell us and we will test it on yours.
+
 ## Screen sharing outside the app (iOS)
 
 Sharing the whole device screen, including other apps, needs a Broadcast Upload Extension in your

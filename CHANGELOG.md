@@ -3,6 +3,68 @@
 Written for the people installing this package. One section per released version; the release
 workflow reads the section matching the version being published and will not publish without it.
 
+Write notes as you go under `## Unreleased`. Preparing a release renames that heading to the
+version being released, so there is nothing to remember at release time.
+
+## 1.2.0
+
+### Changed
+
+- **A video, map or camera preview that Android cannot capture now says so.** These render on a
+  separate layer that a frame has no access to, so the area used to arrive as a transparent
+  rectangle an agent would read as the app being blank or black. It is now filled with a hatch
+  captioned `not captured`. Nothing else in the frame changes, and the marking only appears where
+  the frame genuinely has nothing — if your app draws anything over the area, that is what the
+  agent sees. To have the content captured instead, render it into the view tree: see
+  [Video, maps and camera previews](./README.md#video-maps-and-camera-previews).
+
+### Fixed
+
+- **Android: the customer's screen reaches the agent again.** Every frame an Android device sent
+  was encoded as WebP but labelled a JPEG, and a browser trusts that label rather than the bytes —
+  so the agent's view, and every Android replay, has been blank since the switch to WebP. Nothing
+  reported an error at any point: the frames arrived whole and simply could not be decoded. If you
+  have been seeing empty Android sessions, they were never empty.
+- **Android: a dialog or a modal is part of the recording.** A React Native `<Modal>`, an alert and
+  anything else Android gives a window of its own were missing from the frame altogether: the agent
+  saw the screen behind the modal, with nothing to suggest the customer was looking at something
+  else. Every window the app has on screen is now captured, stacked in the order the system draws
+  them, dimming included.
+- **Android: a React Native tap says what the customer tapped.** Taps on a button, a row or a link
+  all arrived as "Tapped the screen", because the SDK asked which view under the finger was
+  clickable — a question React Native answers inconsistently — and stopped at the wrong one. A tap
+  is now named after the control it landed on, "Tapped *View all*", and falls back to "Tapped the
+  screen" only where there is genuinely no label to use. iOS was already naming them.
+- **iOS: a frame the WebP encoder refuses is labelled as what it actually is.** The SDK falls back
+  to JPEG for a frame WebP cannot encode, but the `data:` URL kept saying WebP, and a browser
+  decodes by that label without ever looking at the bytes — so those frames would have arrived
+  blank. Nobody has reported it and the fallback is rare, but it is the same mistake that blanked
+  Android, so the label now travels with the bytes instead of sitting in a template.
+- **Android: the app no longer freezes during a support call.** Touching the screen as a meeting
+  started, or tapping "end", could lock the app for several seconds and leave Android offering to
+  close it. Both went through the same socket lock on the main thread; nothing does now. The freeze
+  also stopped the screen updating and could drop the customer out of the meeting.
+- **Android: the chat button sits with the call controls**, beside the microphone, rather than
+  above the agent's name.
+- **iOS: the chat button sits with the call controls too**, at the microphone's left, rather than
+  as a loose icon over the agent's name.
+- **iOS: closing the chat panel gives the app back.** The panel dimmed the screen behind it to
+  open and only undimmed when the SDK took it down, so closing it with its own button left the
+  customer's app behind a dark blur that swallowed every touch for the rest of the call.
+- **The unread badge keeps counting after the chat panel has been opened once.** The badge and the
+  banners share the message log with the panel, and the panel used to take the log's only callback
+  on the way in and clear it on the way out — so after one visit to the chat, nothing told the
+  customer another message had arrived. Both platforms.
+- **iOS: the agent can hear the customer.** Unmuting the microphone left the customer inaudible —
+  the agent saw an unmuted microphone and heard silence — until the customer also turned their
+  camera on, and only in that order. Four things were wrong, each enough on its own: turning an
+  input on opened the device without publishing the track; the state updates sent to the agent
+  raced each other, so the stale "off" could land after the "playable" that followed it and decide
+  what the agent saw; nothing reported the microphone again when it finished starting up; and the
+  permission was read rather than requested, so a device that had never been asked never started
+  the microphone at all. A call now publishes what it opens, reports it when it is really ready,
+  and those reports arrive in the order they were made.
+
 ## 1.1.0
 
 ### Added
