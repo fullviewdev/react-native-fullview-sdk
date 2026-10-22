@@ -6,6 +6,46 @@ workflow reads the section matching the version being published and will not pub
 Write notes as you go under `## Unreleased`. Preparing a release renames that heading to the
 version being released, so there is nothing to remember at release time.
 
+## 1.3.0
+
+### Changed
+
+- **Co-browse on mobile is now a setting on your organisation, and it starts switched off.** Until
+  Fullview turns it on for you, `requestCoBrowse()` returns without contacting the server and an
+  incoming co-browse or meeting invitation is ignored, so the customer is never shown one. Nothing
+  else changes: recording, replays and the rest of the SDK behave as before. Ask Fullview to enable
+  it for the organisations whose apps should be able to co-browse.
+
+### Fixed
+
+- **iOS: the agent sees modals, sheets and alerts.** A React Native `<Modal>` — and any sheet or
+  alert — is presented onto the window beside the screen it covers, not inside it, so the capture
+  was drawing the screen *behind* it: an agent watching a co-browse saw the app as it had been
+  before the modal opened, with nothing to suggest the customer was looking at something else. A
+  full-screen modal fared worse and sent a blank frame. The picture also stopped updating for as
+  long as the modal was open, because the check that notices the screen changed was looking at the
+  same wrong place. Redaction now follows what is drawn, so a masked field inside a modal stays
+  masked.
+- **Android: the agent sees the customer's screen in every meeting, not just the first.** From the
+  second meeting of an app session onwards the agent opened on a blank screen and stayed there,
+  while the phone looked like it was streaming normally. The SDK was waiting, on the socket's own
+  callback thread, for a message that could not be sent until that thread let go — so the
+  connection deadlocked the instant it opened, still reporting itself healthy, and nothing reached
+  the agent or the recording. Nothing logged an error at either end. The first meeting escaped it
+  because the frame that triggered it is a cached one, and the cache is empty when an app starts.
+- **Android: the agent can hear the customer in a meeting.** Unmuting on an Android phone sent the
+  agent nothing — not intermittently, but never: a meeting reported the customer's state through
+  the co-browse endpoint, which has no field for the track states, and the agent's dashboard only
+  plays a customer's audio for a track it has been told is ready. Nothing logged an error at any
+  point, on either side. Two further faults in the same path are fixed with it: turning an input on
+  opened the device without publishing the track, and the state updates raced each other, so a
+  stale "muted" could land after the update that followed it.
+- **The agent sees the customer's microphone and camera state during a co-browse.** Both SDKs
+  reported it to an endpoint that no longer exists, so every update was refused and thrown away
+  without surfacing an error: the agent's view of the customer stayed frozen at whatever it was
+  when the session opened, however many times the customer muted or unmuted afterwards. Meetings
+  were fixed separately and are unaffected by this.
+
 ## 1.2.0
 
 ### Changed
