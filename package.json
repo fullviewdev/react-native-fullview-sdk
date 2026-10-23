@@ -1,6 +1,6 @@
 {
   "name": "@fullview/react-native-fullview-sdk",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Fullview SDK for React Native: live support meetings with screen sharing and data redaction, with the native iOS and Android libraries bundled.",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",

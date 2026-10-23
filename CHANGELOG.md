@@ -6,6 +6,16 @@ workflow reads the section matching the version being published and will not pub
 Write notes as you go under `## Unreleased`. Preparing a release renames that heading to the
 version being released, so there is nothing to remember at release time.
 
+## 1.4.0
+
+### Changed
+
+- **Replays and co-browse sessions from a phone can now be checked for missing events.** Every
+  event the SDK sends carries its position in a sequence, which is what lets us tell whether
+  anything was lost on the way and how often — something that was not measurable for mobile
+  before. Nothing changes in what the SDK records, how much it sends, or what it keeps on the
+  device.
+
 ## 1.3.0
 
 ### Changed
