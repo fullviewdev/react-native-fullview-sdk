@@ -6,6 +6,39 @@ workflow reads the section matching the version being published and will not pub
 Write notes as you go under `## Unreleased`. Preparing a release renames that heading to the
 version being released, so there is nothing to remember at release time.
 
+## 1.5.0
+
+### Added
+
+- **The agent can tap the customer's screen.** In a co-browse or meeting, an agent's click on the
+  mirrored screen now presses what is under it on the phone, as it already does on the web, on
+  Android and iOS, React Native included. It follows the same organisation setting as the web
+  ("agent clicks"): with agent clicks turned off the agent's click still shows on the customer's
+  screen but presses nothing. The call controls never take an agent's tap, and on Android neither
+  does a view marked with `setBlockingClickListener` or `blockClickEvent`.
+
+  On iOS the tap is delivered through public API only: it presses buttons, switches, segmented
+  controls, sliders and React Native pressables, focuses text fields, selects table and collection
+  rows, and activates anything that responds to VoiceOver's activate. A custom UIKit gesture
+  recognizer cannot be triggered this way and does not respond to an agent's tap.
+- **The agent can scroll the customer's screen** with the mouse wheel, the trackpad, or by dragging,
+  the way a finger would. Android scrolls whatever is under the pointer (Views, Compose, React
+  Native, Flutter) and stops where the agent stops, without flinging on; iOS scrolls the nearest
+  scroll view under the pointer that can still move that way.
+
+### Changed
+
+- **The agent sees what their tap or scroll did within about a third of a second**, instead of up
+  to a second later.
+
+### Fixed
+
+- **Android: the agent's view no longer freezes on an old screen.** A screen that changed after a
+  quiet moment could be taken for one that had not, and the agent kept seeing the old screen while
+  the customer was looking at the new one, until something else changed.
+- **Android: the app no longer stalls for over half a second each time the agent clicks.** The
+  click animation held the main thread for its whole length (about 650 ms).
+
 ## 1.4.0
 
 ### Changed

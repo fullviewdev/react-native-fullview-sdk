@@ -1,6 +1,6 @@
 {
   "name": "@fullview/react-native-fullview-sdk",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Fullview SDK for React Native: live support meetings with screen sharing and data redaction, with the native iOS and Android libraries bundled.",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
@@ -104,7 +104,9 @@
     "typescript": "^6.0.3"
   },
   "resolutions": {
-    "@types/react": "^19.2.0"
+    "@types/react": "^19.2.0",
+    "release-it/undici": "^6.29.1",
+    "get-uri/basic-ftp": "^6.2.1"
   },
   "peerDependencies": {
     "expo": "*",

@@ -1,4 +1,5 @@
 #import "FullviewSdk.h"
+#import "FullviewFabricTaps.h"
 
 #if __has_include("react_native_fullview_sdk-Swift.h")
 #import "react_native_fullview_sdk-Swift.h"
@@ -22,6 +23,11 @@
 - (instancetype)init {
   if (self = [super init]) {
     _impl = [FullviewSdkImpl new];
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [FullviewAgentTaps install:^BOOL(UIView *view, CGPoint point) {
+        return [FullviewFabricTaps tapView:view atWindowPoint:point];
+      }];
+    });
   }
   return self;
 }
